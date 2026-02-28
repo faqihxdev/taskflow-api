@@ -18,6 +18,17 @@ describe('GET /tasks', () => {
   });
 });
 
+describe('GET /tasks/:id', () => {
+  it('should return 404 for non-existent task', async () => {
+    const res = await request(app)
+      .get('/tasks/non-existent-id')
+      .set(AUTH_HEADER);
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: 'Task not found' });
+  });
+});
+
 describe('POST /tasks', () => {
   it('should create a task', async () => {
     const res = await request(app)
@@ -42,5 +53,7 @@ describe('DELETE /tasks', () => {
       .set(AUTH_HEADER);
 
     expect(deleteRes.status).toBe(204);
+    expect(deleteRes.text).toBe('');
+    expect(deleteRes.body).toEqual({});
   });
 });

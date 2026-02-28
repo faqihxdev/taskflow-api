@@ -20,6 +20,9 @@ router.get('/', (req: Request, res: Response) => {
 
 router.get('/:id', (req: Request, res: Response) => {
   const task = getTaskById(req.params.id);
+  if (!task) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
   res.json({
     id: task.id,
     title: task.title,
@@ -59,7 +62,7 @@ router.delete('/:id', (req: Request, res: Response) => {
   if (!deleted) {
     return res.status(404).json({ error: 'Task not found' });
   }
-  res.status(200).json({ message: 'Task deleted' });
+  res.status(204).send();
 });
 
 export default router;
