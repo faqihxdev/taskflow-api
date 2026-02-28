@@ -4,6 +4,8 @@ export interface Task {
   description: string;
   status: 'todo' | 'in_progress' | 'done';
   assignee?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface User {
