@@ -26,6 +26,19 @@ describe('POST /tasks', () => {
       .send({ title: 'Test task', description: 'A test' });
     expect(res.status).toBe(201);
   });
+
+  it('should reject invalid task payloads', async () => {
+    const res = await request(app)
+      .post('/tasks')
+      .set(AUTH_HEADER)
+      .send({ description: 'Missing title' });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      error: 'Validation failed',
+      details: 'Title is required',
+    });
+  });
 });
 
 describe('DELETE /tasks', () => {

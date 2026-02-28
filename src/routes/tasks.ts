@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
 import { getAllTasks, getTaskById, createTask, updateTask, deleteTask } from '../models/task';
+import { validate } from '../middleware/validate';
 import { Task } from '../types';
 
 const router = Router();
@@ -29,7 +31,15 @@ router.get('/:id', (req: Request, res: Response) => {
   });
 });
 
-router.post('/', (req: Request, res: Response) => {
+const createTaskSchema = z.object({
+  title: z.string({ required_error: 'Title is required' }).min(1, 'Title is required'),
+  description: z.string().optional(),
+  assignee: z.string().optional(),
+});
+
+type CreateTaskBody = z.infer<typeof createTaskSchema>;
+
+router.post('/', validate(createTaskSchema), async (req: Request<{}, {}, CreateTaskBody>, res: Response) => {
   const { title, description, assignee } = req.body;
 
   console.log("debug: creating task", req.body);
