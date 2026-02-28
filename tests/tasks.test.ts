@@ -65,6 +65,54 @@ describe('POST /tasks', () => {
   });
 });
 
+describe('PATCH /tasks/:id/status', () => {
+  it('should update status and return the updated task', async () => {
+    const createRes = await request(app)
+      .post('/tasks')
+      .set(AUTH_HEADER)
+      .send({ title: 'Status update', description: 'Update status' });
+
+    const taskId = createRes.body.id;
+
+    const patchRes = await request(app)
+      .patch(`/tasks/${taskId}/status`)
+      .set(AUTH_HEADER)
+      .send({ status: 'done' });
+
+    expect(patchRes.status).toBe(200);
+    expect(patchRes.body.id).toBe(taskId);
+    expect(patchRes.body.status).toBe('done');
+  });
+
+  it('should return 400 for invalid status', async () => {
+    const createRes = await request(app)
+      .post('/tasks')
+      .set(AUTH_HEADER)
+      .send({ title: 'Bad status', description: 'Invalid status' });
+
+    const taskId = createRes.body.id;
+
+    const patchRes = await request(app)
+      .patch(`/tasks/${taskId}/status`)
+      .set(AUTH_HEADER)
+      .send({ status: 'invalid-status' });
+
+    expect(patchRes.status).toBe(400);
+    expect(patchRes.body.error).toBe('Validation failed');
+    expect(typeof patchRes.body.details).toBe('string');
+  });
+
+  it('should return 404 when task is not found', async () => {
+    const patchRes = await request(app)
+      .patch('/tasks/missing-task/status')
+      .set(AUTH_HEADER)
+      .send({ status: 'todo' });
+
+    expect(patchRes.status).toBe(404);
+    expect(patchRes.body).toEqual({ error: 'Task not found' });
+  });
+});
+
 describe('DELETE /tasks', () => {
   it('should delete an existing task', async () => {
     const createRes = await request(app)
