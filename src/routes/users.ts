@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { getAllUsers, getUserById, createUser } from '../models/user';
+import { z } from 'zod';
+import { getAllUsers, getUserById, getUserByEmail, createUser } from '../models/user';
+import { validate } from '../middleware/validate';
 import { User } from '../types';
 
 const router = Router();
@@ -17,14 +19,27 @@ router.get('/:id', (req: Request, res: Response) => {
   res.json(user);
 });
 
-router.post('/', (req: Request, res: Response) => {
+const createUserSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Email must be valid'),
+  role: z.enum(['admin', 'member']).optional(),
+});
+
+type CreateUserBody = z.infer<typeof createUserSchema>;
+
+router.post('/', validate(createUserSchema), async (req: Request<{}, {}, CreateUserBody>, res: Response) => {
   const { name, email, role } = req.body;
+
+  const existingUser = getUserByEmail(email);
+  if (existingUser) {
+    return res.status(409).json({ error: 'User with this email already exists' });
+  }
 
   const user: User = {
     id: uuidv4(),
     name,
     email,
-    role: role || 'member',
+    role: role ?? 'member',
   };
 
   createUser(user);

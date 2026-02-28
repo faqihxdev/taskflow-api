@@ -1,9 +1,41 @@
 import request from 'supertest';
 import app from '../src/app';
+import { resetUsers } from '../src/models/user';
+
+const AUTH_HEADER = { Authorization: 'Bearer test-token-123' };
+
+beforeEach(() => {
+  resetUsers();
+});
 
 describe('User routes', () => {
-  test.todo('should list users');
-  test.todo('should create a user');
-  test.todo('should get user by id');
-  test.todo('should return 404 for non-existent user');
+  it('should create a user', async () => {
+    const res = await request(app)
+      .post('/users')
+      .set(AUTH_HEADER)
+      .send({ name: 'Ada Lovelace', email: 'ada@example.com', role: 'admin' });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({
+      name: 'Ada Lovelace',
+      email: 'ada@example.com',
+      role: 'admin',
+    });
+    expect(res.body.id).toBeDefined();
+  });
+
+  it('should reject duplicate emails', async () => {
+    await request(app)
+      .post('/users')
+      .set(AUTH_HEADER)
+      .send({ name: 'User One', email: 'dup@example.com' });
+
+    const res = await request(app)
+      .post('/users')
+      .set(AUTH_HEADER)
+      .send({ name: 'User Two', email: 'dup@example.com' });
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ error: 'User with this email already exists' });
+  });
 });
