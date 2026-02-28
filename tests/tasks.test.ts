@@ -79,5 +79,6 @@ describe('DELETE /tasks', () => {
       .set(AUTH_HEADER);
 
     expect(deleteRes.status).toBe(204);
+    expect(deleteRes.text).toBe('');
   });
 });
