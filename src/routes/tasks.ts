@@ -13,8 +13,6 @@ router.get('/', (req: Request, res: Response) => {
     tasks = tasks.filter(t => t.status === status);
   }
 
-  console.log("debug:", tasks);
-
   res.json(tasks);
 });
 
@@ -31,8 +29,6 @@ router.get('/:id', (req: Request, res: Response) => {
 
 router.post('/', (req: Request, res: Response) => {
   const { title, description, assignee } = req.body;
-
-  console.log("debug: creating task", req.body);
 
   const task: Task = {
     id: uuidv4(),

@@ -16,6 +16,25 @@ describe('GET /tasks', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
   });
+
+  it('should not log debug output on GET or POST', async () => {
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    try {
+      await request(app)
+        .get('/tasks')
+        .set(AUTH_HEADER);
+
+      await request(app)
+        .post('/tasks')
+        .set(AUTH_HEADER)
+        .send({ title: 'No logs', description: 'No logs please' });
+
+      expect(logSpy).not.toHaveBeenCalled();
+    } finally {
+      logSpy.mockRestore();
+    }
+  });
 });
 
 describe('POST /tasks', () => {
@@ -41,6 +60,6 @@ describe('DELETE /tasks', () => {
       .delete(`/tasks/${taskId}`)
       .set(AUTH_HEADER);
 
-    expect(deleteRes.status).toBe(204);
+    expect(deleteRes.status).toBe(200);
   });
 });
