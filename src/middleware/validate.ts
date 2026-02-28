@@ -1,14 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodSchema } from 'zod';
+import { ZodTypeAny } from 'zod';
+import { createAppError } from '../utils/helpers';
 
-export const validate = (schema: ZodSchema) => {
+export const validate = <T extends ZodTypeAny>(schema: T) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const result = schema.safeParse(req.body);
     if (!result.success) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        details: result.error.issues.map(i => i.message).join(', '),
-      });
+      const details = result.error.issues.map(issue => issue.message).join(', ');
+      return next(createAppError('Validation failed', 400, details));
     }
     req.body = result.data;
     next();

@@ -17,3 +17,8 @@ export interface ErrorResponse {
   error: string;
   details?: string;
 }
+
+export interface AppError extends Error {
+  status?: number;
+  details?: string;
+}

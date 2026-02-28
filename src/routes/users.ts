@@ -1,20 +1,21 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { getAllUsers, getUserById, getUserByEmail, createUser } from '../models/user';
 import { validate } from '../middleware/validate';
 import { User } from '../types';
+import { createAppError } from '../utils/helpers';
 
 const router = Router();
 
-router.get('/', (req: Request, res: Response) => {
+router.get('/', (req: Request, res: Response<User[]>) => {
   res.json(getAllUsers());
 });
 
-router.get('/:id', (req: Request, res: Response) => {
+router.get('/:id', (req: Request<{ id: string }>, res: Response<User>, next: NextFunction) => {
   const user = getUserById(req.params.id);
   if (!user) {
-    return res.status(404).json({ error: 'User not found' });
+    return next(createAppError('User not found', 404));
   }
   res.json(user);
 });
@@ -27,23 +28,27 @@ const createUserSchema = z.object({
 
 type CreateUserBody = z.infer<typeof createUserSchema>;
 
-router.post('/', validate(createUserSchema), async (req: Request<{}, {}, CreateUserBody>, res: Response) => {
-  const { name, email, role } = req.body;
+router.post(
+  '/',
+  validate(createUserSchema),
+  async (req: Request<{}, User, CreateUserBody>, res: Response<User>, next: NextFunction) => {
+    const { name, email, role } = req.body;
 
-  const existingUser = getUserByEmail(email);
-  if (existingUser) {
-    return res.status(409).json({ error: 'User with this email already exists' });
+    const existingUser = getUserByEmail(email);
+    if (existingUser) {
+      return next(createAppError('User with this email already exists', 409));
+    }
+
+    const user: User = {
+      id: uuidv4(),
+      name,
+      email,
+      role: role ?? 'member',
+    };
+
+    createUser(user);
+    res.status(201).json(user);
   }
-
-  const user: User = {
-    id: uuidv4(),
-    name,
-    email,
-    role: role ?? 'member',
-  };
-
-  createUser(user);
-  res.status(201).json(user);
-});
+);
 
 export default router;
