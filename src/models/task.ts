@@ -4,6 +4,25 @@ const tasks: Task[] = [];
 
 export const getAllTasks = (): Task[] => tasks;
 
+export const getTasksByStatus = (status?: string): Task[] => {
+  if (!status) {
+    return tasks;
+  }
+  const normalized = status.toLowerCase();
+  return tasks.filter(t => t.status.toLowerCase() === normalized);
+};
+
+export const getPaginatedTasks = (options: {
+  status?: string;
+  page: number;
+  limit: number;
+}): { tasks: Task[]; total: number } => {
+  const filtered = getTasksByStatus(options.status);
+  const start = (options.page - 1) * options.limit;
+  const end = start + options.limit;
+  return { tasks: filtered.slice(start, end), total: filtered.length };
+};
+
 export const getTaskById = (id: string): Task | undefined =>
   tasks.find(t => t.id === id);
 

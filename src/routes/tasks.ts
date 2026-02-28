@@ -1,61 +1,133 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { getAllTasks, getTaskById, createTask, updateTask, deleteTask } from '../models/task';
-import { Task } from '../types';
+import { z } from 'zod';
+import { getPaginatedTasks, getTaskById, createTask, updateTask, deleteTask } from '../models/task';
+import { validate } from '../middleware/validate';
+import { PaginatedResponse, Task } from '../types';
 
 const router = Router();
 
-router.get('/', (req: Request, res: Response) => {
-  let tasks = getAllTasks();
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 10;
 
-  const status = typeof req.query.status === 'string' ? req.query.status.trim() : '';
-  if (status) {
-    const normalizedStatus = status.toLowerCase();
-    tasks = tasks.filter(t => t.status.toLowerCase() === normalizedStatus);
+const parsePositiveInt = (value: unknown, fallback: number): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value > 0 ? Math.floor(value) : fallback;
   }
+  if (typeof value !== 'string') {
+    return fallback;
+  }
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+  return parsed;
+};
 
-  console.log("debug:", tasks);
+router.get('/', async (req: Request, res: Response) => {
+  const status = typeof req.query.status === 'string' ? req.query.status.trim() : '';
+  const normalizedStatus = status ? status.toLowerCase() : undefined;
+  const page = parsePositiveInt(req.query.page, DEFAULT_PAGE);
+  const limit = parsePositiveInt(req.query.limit, DEFAULT_LIMIT);
 
-  res.json(tasks);
-});
-
-router.get('/:id', (req: Request, res: Response) => {
-  const task = getTaskById(req.params.id);
-  res.json({
-    id: task.id,
-    title: task.title,
-    description: task.description,
-    status: task.status,
-    assignee: task.assignee,
-  });
-});
-
-router.post('/', (req: Request, res: Response) => {
-  const { title, description, assignee } = req.body;
-
-  console.log("debug: creating task", req.body);
-
-  const task: Task = {
-    id: uuidv4(),
-    title,
-    description: description || '',
-    status: 'todo',
-    assignee,
+  const { tasks, total } = getPaginatedTasks({ status: normalizedStatus, page, limit });
+  const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+  const response: PaginatedResponse<Task> = {
+    data: tasks,
+    pagination: {
+      page,
+      limit,
+      totalItems: total,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1 && totalPages > 0,
+    },
   };
 
-  createTask(task);
-  res.status(201).json(task);
+  res.json(response);
 });
 
-router.put('/:id', (req: Request, res: Response) => {
-  const updated = updateTask(req.params.id, req.body);
-  if (!updated) {
-    return res.status(404).json({ error: 'Task not found' });
+router.get('/:id', async (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
+  const task = getTaskById(req.params.id);
+  if (!task) {
+    const error = new Error('Task not found') as Error & { status?: number };
+    error.status = 404;
+    return next(error);
   }
-  res.json(updated);
+  res.json(task);
 });
 
-router.delete('/:id', (req: Request, res: Response) => {
+const createTaskSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().optional(),
+  assignee: z.string().optional(),
+});
+
+type CreateTaskBody = z.infer<typeof createTaskSchema>;
+
+router.post(
+  '/',
+  validate(createTaskSchema),
+  async (req: Request<{}, {}, CreateTaskBody>, res: Response) => {
+    const { title, description, assignee } = req.body;
+
+    const task: Task = {
+      id: uuidv4(),
+      title,
+      description: description || '',
+      status: 'todo',
+      assignee,
+    };
+
+    createTask(task);
+    res.status(201).json(task);
+  },
+);
+
+const updateTaskSchema = z
+  .object({
+    title: z.string().min(1, 'Title is required').optional(),
+    description: z.string().optional(),
+    status: z.enum(['todo', 'in_progress', 'done']).optional(),
+    assignee: z.string().optional(),
+  })
+  .refine(data => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided',
+  });
+
+type UpdateTaskBody = z.infer<typeof updateTaskSchema>;
+
+const updateTaskStatusSchema = z.object({
+  status: z.enum(['todo', 'in_progress', 'done']),
+});
+
+type UpdateTaskStatusBody = z.infer<typeof updateTaskStatusSchema>;
+
+router.patch(
+  '/:id/status',
+  validate(updateTaskStatusSchema),
+  async (req: Request<{ id: string }, {}, UpdateTaskStatusBody>, res: Response) => {
+    const updated = updateTask(req.params.id, { status: req.body.status });
+    if (!updated) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    res.json(updated);
+  },
+);
+
+router.put(
+  '/:id',
+  validate(updateTaskSchema),
+  async (req: Request<{ id: string }, {}, UpdateTaskBody>, res: Response) => {
+    const updated = updateTask(req.params.id, req.body);
+    if (!updated) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    res.json(updated);
+  },
+);
+
+router.delete('/:id', async (req: Request<{ id: string }>, res: Response) => {
   const deleted = deleteTask(req.params.id);
   if (!deleted) {
     return res.status(404).json({ error: 'Task not found' });
@@ -64,4 +136,3 @@ router.delete('/:id', (req: Request, res: Response) => {
 });
 
 export default router;
-

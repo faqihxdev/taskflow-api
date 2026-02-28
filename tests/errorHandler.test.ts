@@ -15,8 +15,8 @@ describe('Error handler', () => {
   it('includes details in non-production', async () => {
     process.env.NODE_ENV = 'test';
     const res = await triggerError();
-    expect(res.status).toBe(500);
-    expect(res.body.error).toBeDefined();
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('Task not found');
     expect(typeof res.body.details).toBe('string');
     expect(res.body.details.length).toBeGreaterThan(0);
   });
@@ -24,8 +24,8 @@ describe('Error handler', () => {
   it('omits details in production', async () => {
     process.env.NODE_ENV = 'production';
     const res = await triggerError();
-    expect(res.status).toBe(500);
-    expect(res.body.error).toBeDefined();
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('Task not found');
     expect(res.body.details).toBeUndefined();
   });
 });
