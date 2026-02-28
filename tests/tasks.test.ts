@@ -99,6 +99,11 @@ describe('POST /tasks', () => {
       .set(AUTH_HEADER)
       .send({ title: 'Test task', description: 'A test' });
     expect(res.status).toBe(201);
+    expect(typeof res.body.id).toBe('string');
+    expect(res.body.title).toBe('Test task');
+    expect(res.body.description).toBe('A test');
+    expect(res.body.status).toBe('todo');
+    expect(res.body.assignee).toBeUndefined();
     expect(typeof res.body.created_at).toBe('string');
     expect(typeof res.body.updated_at).toBe('string');
     expect(res.body.created_at).toBe(res.body.updated_at);
