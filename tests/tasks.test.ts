@@ -17,6 +17,74 @@ describe('GET /tasks', () => {
     expect(res.body).toEqual([]);
   });
 
+  it('should filter tasks by search keyword case-insensitively', async () => {
+    const firstRes = await request(app)
+      .post('/tasks')
+      .set(AUTH_HEADER)
+      .send({ title: 'Write Docs', description: 'Documentation' });
+
+    await request(app)
+      .post('/tasks')
+      .set(AUTH_HEADER)
+      .send({ title: 'Fix bug', description: 'Bug fix' });
+
+    const res = await request(app)
+      .get('/tasks')
+      .query({ search: '  doCs  ' })
+      .set(AUTH_HEADER);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].id).toBe(firstRes.body.id);
+  });
+
+  it('should combine status and search filters', async () => {
+    const buildRes = await request(app)
+      .post('/tasks')
+      .set(AUTH_HEADER)
+      .send({ title: 'Build report', description: 'Build it' });
+
+    const reportRes = await request(app)
+      .post('/tasks')
+      .set(AUTH_HEADER)
+      .send({ title: 'Review report', description: 'Review it' });
+
+    await request(app)
+      .put(`/tasks/${reportRes.body.id}`)
+      .set(AUTH_HEADER)
+      .send({ status: 'done' });
+
+    const res = await request(app)
+      .get('/tasks')
+      .query({ status: 'DONE', search: 'report' })
+      .set(AUTH_HEADER);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].id).toBe(reportRes.body.id);
+    expect(res.body[0].status).toBe('done');
+  });
+
+  it('should return all tasks when search is empty', async () => {
+    await request(app)
+      .post('/tasks')
+      .set(AUTH_HEADER)
+      .send({ title: 'First task', description: 'First' });
+
+    await request(app)
+      .post('/tasks')
+      .set(AUTH_HEADER)
+      .send({ title: 'Second task', description: 'Second' });
+
+    const res = await request(app)
+      .get('/tasks')
+      .query({ search: '   ' })
+      .set(AUTH_HEADER);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(2);
+  });
+
   it('should filter tasks by status case-insensitively', async () => {
     const todoRes = await request(app)
       .post('/tasks')

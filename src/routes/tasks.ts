@@ -14,7 +14,11 @@ router.get('/', (req: Request, res: Response) => {
     tasks = tasks.filter(t => t.status.toLowerCase() === normalizedStatus);
   }
 
-  console.log("debug:", tasks);
+  const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  if (search) {
+    const normalizedSearch = search.toLowerCase();
+    tasks = tasks.filter(t => t.title.toLowerCase().includes(normalizedSearch));
+  }
 
   res.json(tasks);
 });
