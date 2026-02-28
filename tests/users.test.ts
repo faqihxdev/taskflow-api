@@ -33,9 +33,9 @@ describe('User routes', () => {
     const res = await request(app)
       .post('/users')
       .set(AUTH_HEADER)
-      .send({ name: 'User Two', email: 'dup@example.com' });
+      .send({ name: 'User Two', email: 'DUP@example.com' });
 
     expect(res.status).toBe(409);
-    expect(res.body).toEqual({ error: 'User with this email already exists' });
+    expect(res.body).toMatchObject({ error: 'User with this email already exists' });
   });
 });

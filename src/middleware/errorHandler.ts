@@ -6,11 +6,12 @@ type ErrorResponse = {
 };
 
 export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
-  const status = (err as any).status || 500;
+  const isDuplicateEmailError = err.name === 'DuplicateEmailError';
+  const status = (err as any).status || (isDuplicateEmailError ? 409 : 500);
   const isProduction = process.env.NODE_ENV === 'production';
 
   const response: ErrorResponse = {
-    error: err.message || 'Internal Server Error',
+    error: err.message || (isDuplicateEmailError ? 'User with this email already exists' : 'Internal Server Error'),
   };
 
   if (!isProduction) {
