@@ -18,6 +18,17 @@ describe('GET /tasks', () => {
   });
 });
 
+describe('GET /tasks/:id', () => {
+  it('should return 404 when task does not exist', async () => {
+    const res = await request(app)
+      .get('/tasks/non-existent-task-id')
+      .set(AUTH_HEADER);
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: 'Task not found' });
+  });
+});
+
 describe('POST /tasks', () => {
   it('should create a task', async () => {
     const res = await request(app)
