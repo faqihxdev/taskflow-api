@@ -94,7 +94,7 @@ describe('GET /tasks', () => {
   });
 
   it('should apply status filtering before pagination', async () => {
-    const first = await request(app)
+    await request(app)
       .post('/tasks')
       .set(AUTH_HEADER)
       .send({ title: 'First', description: 'First' });
