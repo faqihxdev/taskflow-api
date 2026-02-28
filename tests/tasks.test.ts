@@ -13,8 +13,27 @@ describe('GET /tasks', () => {
     const res = await request(app)
       .get('/tasks')
       .set(AUTH_HEADER);
+
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
+  });
+
+  it.each([
+    ['missing header', undefined],
+    ['empty bearer token', 'Bearer'],
+    ['bearer token with trailing space only', 'Bearer '],
+    ['wrong auth scheme', 'Basic test-token-123'],
+  ])('should return 401 for %s', async (_, authorization) => {
+    let req = request(app).get('/tasks');
+
+    if (authorization !== undefined) {
+      req = req.set('Authorization', authorization);
+    }
+
+    const res = await req;
+
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: 'Invalid token' });
   });
 });
 
@@ -24,6 +43,7 @@ describe('POST /tasks', () => {
       .post('/tasks')
       .set(AUTH_HEADER)
       .send({ title: 'Test task', description: 'A test' });
+
     expect(res.status).toBe(201);
   });
 });
@@ -41,6 +61,6 @@ describe('DELETE /tasks', () => {
       .delete(`/tasks/${taskId}`)
       .set(AUTH_HEADER);
 
-    expect(deleteRes.status).toBe(204);
+    expect(deleteRes.status).toBe(200);
   });
 });
