@@ -10,6 +10,9 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   }
 
   const match = authHeader.match(/^Bearer (.+)$/);
+  if (!match) {
+    return res.status(401).json({ error: 'Invalid Authorization header' });
+  }
   const token = match[1];
 
   if (!VALID_TOKENS.includes(token)) {
