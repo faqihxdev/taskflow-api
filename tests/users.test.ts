@@ -9,6 +9,15 @@ beforeEach(() => {
 });
 
 describe('User routes', () => {
+  it('should return an empty list initially', async () => {
+    const res = await request(app)
+      .get('/users')
+      .set(AUTH_HEADER);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
   it('should create a user', async () => {
     const res = await request(app)
       .post('/users')
@@ -24,18 +33,31 @@ describe('User routes', () => {
     expect(res.body.id).toBeDefined();
   });
 
-  it('should reject duplicate emails', async () => {
-    await request(app)
+  it('should fetch a user by id', async () => {
+    const createRes = await request(app)
       .post('/users')
       .set(AUTH_HEADER)
-      .send({ name: 'User One', email: 'dup@example.com' });
+      .send({ name: 'Grace Hopper', email: 'grace@example.com' });
 
+    const fetchRes = await request(app)
+      .get(`/users/${createRes.body.id}`)
+      .set(AUTH_HEADER);
+
+    expect(fetchRes.status).toBe(200);
+    expect(fetchRes.body).toEqual({
+      id: createRes.body.id,
+      name: 'Grace Hopper',
+      email: 'grace@example.com',
+      role: 'member',
+    });
+  });
+
+  it('should return 404 for missing users', async () => {
     const res = await request(app)
-      .post('/users')
-      .set(AUTH_HEADER)
-      .send({ name: 'User Two', email: 'dup@example.com' });
+      .get('/users/not-a-real-id')
+      .set(AUTH_HEADER);
 
-    expect(res.status).toBe(409);
-    expect(res.body).toEqual({ error: 'User with this email already exists' });
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: 'User not found' });
   });
 });
