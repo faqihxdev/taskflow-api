@@ -8,10 +8,12 @@ const router = Router();
 router.get('/', (req: Request, res: Response) => {
   let tasks = getAllTasks();
 
-  const status = typeof req.query.status === 'string' ? req.query.status.trim() : '';
+  const normalizeStatus = (value: unknown): string =>
+    typeof value === 'string' ? value.trim().toLowerCase() : '';
+
+  const status = normalizeStatus(req.query.status);
   if (status) {
-    const normalizedStatus = status.toLowerCase();
-    tasks = tasks.filter(t => t.status.toLowerCase() === normalizedStatus);
+    tasks = tasks.filter(task => normalizeStatus(task.status) === status);
   }
 
   console.log("debug:", tasks);

@@ -52,6 +52,16 @@ describe('GET /tasks', () => {
     expect(todoFilterRes.body).toHaveLength(1);
     expect(todoFilterRes.body[0].id).toBe(todoRes.body.id);
     expect(todoFilterRes.body[0].status).toBe('todo');
+
+    const doneLowercaseRes = await request(app)
+      .get('/tasks')
+      .query({ status: 'done' })
+      .set(AUTH_HEADER);
+
+    expect(doneLowercaseRes.status).toBe(200);
+    expect(doneLowercaseRes.body).toHaveLength(1);
+    expect(doneLowercaseRes.body[0].id).toBe(doneRes.body.id);
+    expect(doneLowercaseRes.body[0].status).toBe('done');
   });
 });
 
