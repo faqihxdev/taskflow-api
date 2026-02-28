@@ -16,6 +16,43 @@ describe('GET /tasks', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
   });
+
+  it('should filter tasks by status case-insensitively', async () => {
+    const todoRes = await request(app)
+      .post('/tasks')
+      .set(AUTH_HEADER)
+      .send({ title: 'Todo task', description: 'Todo' });
+
+    const doneRes = await request(app)
+      .post('/tasks')
+      .set(AUTH_HEADER)
+      .send({ title: 'Done task', description: 'Done' });
+
+    await request(app)
+      .put(`/tasks/${doneRes.body.id}`)
+      .set(AUTH_HEADER)
+      .send({ status: 'done' });
+
+    const res = await request(app)
+      .get('/tasks')
+      .query({ status: 'DoNe' })
+      .set(AUTH_HEADER);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].id).toBe(doneRes.body.id);
+    expect(res.body[0].status).toBe('done');
+
+    const todoFilterRes = await request(app)
+      .get('/tasks')
+      .query({ status: 'ToDo' })
+      .set(AUTH_HEADER);
+
+    expect(todoFilterRes.status).toBe(200);
+    expect(todoFilterRes.body).toHaveLength(1);
+    expect(todoFilterRes.body[0].id).toBe(todoRes.body.id);
+    expect(todoFilterRes.body[0].status).toBe('todo');
+  });
 });
 
 describe('POST /tasks', () => {
