@@ -65,6 +65,17 @@ describe('POST /tasks', () => {
   });
 });
 
+describe('GET /tasks/:id', () => {
+  it('should return 404 for a missing task', async () => {
+    const res = await request(app)
+      .get('/tasks/non-existent-id')
+      .set(AUTH_HEADER);
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: 'Task not found' });
+  });
+});
+
 describe('DELETE /tasks', () => {
   it('should delete an existing task', async () => {
     const createRes = await request(app)

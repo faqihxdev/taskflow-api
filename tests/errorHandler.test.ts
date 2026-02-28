@@ -1,9 +1,20 @@
+import express from 'express';
 import request from 'supertest';
-import app from '../src/app';
+import { errorHandler } from '../src/middleware/errorHandler';
 
-const AUTH_HEADER = { Authorization: 'Bearer test-token-123' };
+const buildApp = () => {
+  const testApp = express();
 
-const triggerError = () => request(app).get('/tasks/non-existent').set(AUTH_HEADER);
+  testApp.get('/boom', () => {
+    throw new Error('Boom');
+  });
+
+  testApp.use(errorHandler);
+
+  return testApp;
+};
+
+const triggerError = () => request(buildApp()).get('/boom');
 
 describe('Error handler', () => {
   const originalEnv = process.env.NODE_ENV;
