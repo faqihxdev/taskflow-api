@@ -10,6 +10,10 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   }
 
   const match = authHeader.match(/^Bearer (.+)$/);
+  if (!match || !match[1]) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+
   const token = match[1];
 
   if (!VALID_TOKENS.includes(token)) {
