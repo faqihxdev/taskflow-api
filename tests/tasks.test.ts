@@ -161,6 +161,10 @@ describe('POST /tasks', () => {
       .set(AUTH_HEADER)
       .send({ title: 'Test task', description: 'A test' });
     expect(res.status).toBe(201);
+    expect(res.body.id).toEqual(expect.any(String));
+    expect(res.body.title).toBe('Test task');
+    expect(res.body.description).toBe('A test');
+    expect(res.body.status).toBe('todo');
   });
 
   it("should not log debug output when creating a task", async () => {
