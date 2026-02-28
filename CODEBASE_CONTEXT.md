@@ -30,7 +30,7 @@ TaskFlow API is a simple task management REST API built with Node.js, TypeScript
 - Build: `npm run build` (TypeScript compile to `dist/`)  
 - Start: `npm start` (runs `ts-node src/index.ts`)  
 - Dev: `npm run dev` (ts-node-dev with respawn)  
-- Note: README says server runs on `http://localhost:4000`, but `src/index.ts` listens on port `3000`.
+- Note: The server listens on port `3000` (see `src/index.ts`).
 
 **Key Patterns and Conventions**  
 - Express routers per resource, mounted in `src/app.ts`  
@@ -41,7 +41,6 @@ TaskFlow API is a simple task management REST API built with Node.js, TypeScript
 - Types centralized in `src/types.ts`
 
 **Areas of Complexity or Technical Debt**  
-- Port mismatch: README says `4000` but code uses `3000`.  
 - Test mismatch: `DELETE /tasks` test expects `204`, but route returns `200` with a JSON body.  
 - Auth middleware assumes `Authorization` header matches `Bearer ...` and dereferences `match[1]` without null check (can throw).  
 - Validation middleware exists (`validate`) but is not used in routes; payloads are not validated.  

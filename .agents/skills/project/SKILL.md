@@ -66,7 +66,7 @@ npm start
 ```bash
 npm run dev
 ```
-- Note the current server listens on port `3000` in `src/index.ts`, but README mentions `4000`.
+- Note the current server listens on port `3000` in `src/index.ts`.
 
 ## Known Technical Debt to Keep in Mind
 - Port mismatch between README and runtime.
