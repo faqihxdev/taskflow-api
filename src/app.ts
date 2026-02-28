@@ -4,10 +4,12 @@ import userRoutes from './routes/users';
 import healthRoutes from './routes/health';
 import { authMiddleware } from './middleware/auth';
 import { errorHandler } from './middleware/errorHandler';
+import { requestLogger } from './middleware/requestLogger';
 
 const app = express();
 
 app.use(express.json());
+app.use(requestLogger);
 
 app.use('/health', healthRoutes);
 
