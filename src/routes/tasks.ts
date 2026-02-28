@@ -3,12 +3,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { getAllTasks, getTaskById, createTask, updateTask, deleteTask } from '../models/task';
 import { Task } from '../types';
+import { validate } from '../middleware/validate';
 
 const router = Router();
 
 const createTaskSchema = z
   .object({
-    title: z.string().min(1, 'Title is required'),
+    title: z.string().trim().min(1, 'Title is required'),
     description: z.string().optional(),
     assignee: z.string().optional(),
   })
@@ -33,6 +34,8 @@ const formatZodError = (error: z.ZodError): string =>
       return `${path}: ${entry.message}`;
     })
     .join('; ');
+
+type CreateTaskBody = z.infer<typeof createTaskSchema>;
 
 router.get('/', async (req: Request, res: Response) => {
   let tasks = getAllTasks();
@@ -60,30 +63,26 @@ router.get('/:id', async (req: Request, res: Response) => {
   res.json(task);
 });
 
-router.post('/', async (req: Request, res: Response) => {
-  const parsed = createTaskSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({
-      error: 'Invalid request body',
-      details: formatZodError(parsed.error),
-    });
+router.post(
+  '/',
+  validate(createTaskSchema),
+  async (req: Request<object, Task, CreateTaskBody>, res: Response<Task>) => {
+    const { title, description, assignee } = req.body;
+    const now = new Date().toISOString();
+    const task: Task = {
+      id: uuidv4(),
+      title,
+      description: description ?? '',
+      status: 'todo',
+      assignee,
+      created_at: now,
+      updated_at: now,
+    };
+
+    const created = createTask(task);
+    res.status(201).json(created);
   }
-
-  const { title, description, assignee } = parsed.data;
-  const now = new Date().toISOString();
-  const task: Task = {
-    id: uuidv4(),
-    title,
-    description: description ?? '',
-    status: 'todo',
-    assignee,
-    created_at: now,
-    updated_at: now,
-  };
-
-  const created = createTask(task);
-  res.status(201).json(created);
-});
+);
 
 router.put('/:id', async (req: Request, res: Response) => {
   const parsed = updateTaskSchema.safeParse(req.body);

@@ -104,6 +104,45 @@ describe('POST /tasks', () => {
     expect(res.body.created_at).toBe(res.body.updated_at);
     expect(Number.isNaN(Date.parse(res.body.created_at))).toBe(false);
   });
+
+  it('should return 400 when title is missing', async () => {
+    const res = await request(app)
+      .post('/tasks')
+      .set(AUTH_HEADER)
+      .send({ description: 'Missing title' });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      error: 'Validation failed',
+      details: 'Required',
+    });
+  });
+
+  it('should return 400 when title is not a string', async () => {
+    const res = await request(app)
+      .post('/tasks')
+      .set(AUTH_HEADER)
+      .send({ title: 123, description: 'Invalid title type' });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      error: 'Validation failed',
+      details: 'Expected string, received number',
+    });
+  });
+
+  it('should return 400 for malformed body', async () => {
+    const res = await request(app)
+      .post('/tasks')
+      .set(AUTH_HEADER)
+      .send(['not-an-object']);
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      error: 'Validation failed',
+      details: 'Expected object, received array',
+    });
+  });
 });
 
 describe('PUT /tasks', () => {
